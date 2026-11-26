@@ -30,7 +30,7 @@
   .calculator-picker button { min-height: 56px; text-align: left; }
   .calculator-picker button[aria-expanded="true"] { background: #202e44; border-color: #88a9dc; }
   .calculator-picker button:disabled { color: #a8b2c2; background: #191e27; border-color: #313a48; cursor: default; }
-  #sphere-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
+  #sphere-level, #chaos-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
   .calculator-heading { margin: 0; font-size: clamp(22px, 4vw, 34px); }
   @media (max-width: 600px) { .calculator-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
@@ -70,7 +70,16 @@
         <p>Одна попытка стоит 2 370 000 адены: 300 000 за синтез и 2 070 000 за Святую Воду Верховного Жреца при покупке в Гиране за Свет. Стоимость показывает средний расход на синтез до выбранного уровня.</p>
         <p>Расчёт предполагает, что при каждой попытке расходуется одна сфера предыдущего уровня. Фактический расход зависит от удачи.</p>
       </section>
-      <section><h2>Расчёт 2</h2><p>Скоро</p></section>
+      <section aria-labelledby="chaos-heading">
+        <h2 id="chaos-heading">Сфера Хаоса/Тьмы</h2>
+        <div class="row"><label for="chaos-level">Желаемый уровень</label><select id="chaos-level"><option value="">Выбери уровень</option></select></div>
+        <div class="row"><span id="chaos-total-label">Сфер 0 уровня в среднем</span><output id="chaos-total" aria-labelledby="chaos-total-label"></output></div>
+        <div class="row"><span id="chaos-adena-label">Стоимость синтеза, адена</span><output id="chaos-adena" aria-labelledby="chaos-adena-label"></output></div>
+        <p>За попытку: 300 000 адены за синтез и 2 070 000 за святую воду. При неудаче сфера уничтожается.</p>
+        <hr>
+        <div class="row"><label for="chaos-base-price">Цена одной сферы 0 уровня, адена</label><input id="chaos-base-price" inputmode="decimal" autocomplete="off"></div>
+        <div class="row"><span id="chaos-full-cost-label">Полная стоимость, адена</span><output id="chaos-full-cost" aria-labelledby="chaos-full-cost-label"></output></div>
+      </section>
       <section><h2>Расчёт 3</h2><p>Скоро</p></section>
     </div>
   </div>
@@ -299,29 +308,57 @@ for (const field of [craftChance, craftCost]) {
   field.addEventListener('blur', () => formatInput(field));
 }
 updateCraft();
-const sphereChances = [50, 45, 45, 40, 40, 30, 30, 24, 14, 7];
-const sphereLevel = document.querySelector('#sphere-level');
-const sphereTotal = document.querySelector('#sphere-total');
-const sphereCosts = [1];
-const sphereAdena = document.querySelector('#sphere-adena');
 const synthesisCost = 300_000 + 2_070_000;
-const sphereAdenaCosts = [0];
 
-for (const [index, chance] of sphereChances.entries()) {
-  const level = index + 1;
-  const option = document.createElement('option');
-  option.value = String(level);
-  option.textContent = String(level);
-  sphereLevel.append(option);
-  sphereCosts.push(sphereCosts[index] * 100 / chance);
-  sphereAdenaCosts.push((sphereAdenaCosts[index] + synthesisCost) * 100 / chance);
+function setupSphereCalculator(prefix, chances, basePrice = null, fullCost = null) {
+  const levelField = document.querySelector(`#${prefix}-level`);
+  const sphereTotal = document.querySelector(`#${prefix}-total`);
+  const synthesisTotal = document.querySelector(`#${prefix}-adena`);
+  const sphereCosts = [1];
+  const adenaCosts = [0];
+
+  for (const [index, chance] of chances.entries()) {
+    const level = index + 1;
+    const option = document.createElement('option');
+    option.value = String(level);
+    option.textContent = String(level);
+    levelField.append(option);
+    sphereCosts.push(sphereCosts[index] * 100 / chance);
+    adenaCosts.push((adenaCosts[index] + synthesisCost) * 100 / chance);
+  }
+
+  function updateSphere() {
+    const level = Number(levelField.value);
+    sphereTotal.value = level ? quantityFormat.format(sphereCosts[level]) : '';
+    synthesisTotal.value = level ? quantityFormat.format(adenaCosts[level]) : '';
+    if (!basePrice) return;
+
+    const hasPrice = basePrice.value.trim() !== '';
+    const price = parseNumber(basePrice.value);
+    const invalidPrice = hasPrice && (!Number.isFinite(price) || price < 0);
+    const total = adenaCosts[level] + sphereCosts[level] * price;
+    const overflow = level > 0 && hasPrice && !invalidPrice && !Number.isFinite(total);
+    basePrice.setAttribute('aria-invalid', String(invalidPrice));
+    fullCost.toggleAttribute('data-error', overflow);
+    fullCost.value = level && hasPrice && !invalidPrice
+      ? (overflow ? 'Слишком большое число' : quantityFormat.format(total))
+      : '';
+  }
+
+  levelField.addEventListener('change', updateSphere);
+  if (basePrice) {
+    basePrice.addEventListener('input', updateSphere);
+    basePrice.addEventListener('blur', () => formatInput(basePrice));
+  }
+  updateSphere();
 }
 
-sphereLevel.addEventListener('change', () => {
-  const level = Number(sphereLevel.value);
-  sphereTotal.value = level ? quantityFormat.format(sphereCosts[level]) : '';
-  sphereAdena.value = level ? quantityFormat.format(sphereAdenaCosts[level]) : '';
-});
+setupSphereCalculator('sphere', [50, 45, 45, 40, 40, 30, 30, 24, 14, 7]);
+setupSphereCalculator(
+  'chaos', [65, 65, 60, 55, 50, 45, 40, 35, 30, 20, 10],
+  document.querySelector('#chaos-base-price'),
+  document.querySelector('#chaos-full-cost'),
+);
 </script>
 </body>
 </html>
