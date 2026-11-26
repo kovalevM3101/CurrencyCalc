@@ -19,10 +19,11 @@
   .rates-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 43%); align-items: center; gap: 10px; padding: 4px 0; }
   label, .row span { font-size: 14px; }
-  input, output { width: 100%; min-width: 0; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
+  input, output { justify-self: end; width: calc(var(--field-chars, 7) * 1ch + 20px); max-width: 100%; min-width: 0; min-height: 40px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
   input { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
   input[aria-invalid="true"] { border-color: #ff9d95; }
   output { background: #183128; color: #a3efc9; overflow-wrap: anywhere; }
+  input:focus { width: calc(max(var(--field-chars, 7), 10) * 1ch + 20px); }
   output[data-error] { color: #ffd492; }
   button { font: inherit; color: #edf0f6; border: 1px solid #526078; border-radius: 8px; background: #202631; padding: 8px 12px; cursor: pointer; }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
@@ -41,27 +42,27 @@
 
 const panels = [
   { title: 'Курсы USDT',
-    fields: [['rubRate', '₽ за 1 USDT', '86,6'], ['uahRate', '₴ за 1 USDT', '45']],
+    fields: [['rubRate', '₽ за 1 USDT'], ['uahRate', '₴ за 1 USDT']],
     note: 'Курс в гривнах — справочное поле. В формулах листа используется курс в рублях.' },
   { title: 'Рубли → адена',
-    fields: [['adenaBudget', 'Бюджет, ₽', '80000'], ['adenaBuyRub', 'Цена 1 млрд адены, ₽', '40']],
+    fields: [['adenaBudget', 'Бюджет, ₽'], ['adenaBuyRub', 'Цена 1 млрд адены, ₽']],
     results: [['adenaBought', 'Получишь адены, млрд']] },
   { title: 'Покупка заданного объёма адены',
-    fields: [['adenaTarget', 'Нужно адены', '100000000000'], ['coinInAdena', 'Цена 1 монеты, адена', '3300000']],
+    fields: [['adenaTarget', 'Нужно адены'], ['coinInAdena', 'Цена 1 монеты, адена']],
     results: [['coinsNeeded', 'Нужно монет'], ['packsNeeded', 'Нужно упаковок по 3 200 монет'], ['packsRub', 'Стоимость, ₽']],
     note: 'Упаковка стоит 400 ₽. Дробное число упаковок учитывается в стоимости.' },
   { title: 'Адена → рубли, USDT и гривны',
-    fields: [['adenaSold', 'Количество адены, млрд', '30'], ['adenaSellRub', 'Цена 1 млрд адены, ₽', '37'], ['adenaSellUah', 'Цена 1 млрд адены, ₴', '23']],
+    fields: [['adenaSold', 'Количество адены, млрд'], ['adenaSellRub', 'Цена 1 млрд адены, ₽'], ['adenaSellUah', 'Цена 1 млрд адены, ₴']],
     results: [['adenaRub', 'Получишь, ₽'], ['adenaUsdt', 'Получишь, USDT'], ['adenaUah', 'Получишь, ₴']] },
   { title: 'Рубли и гривны → монеты',
-    fields: [['budgetUah', 'Бюджет, ₴', '200'], ['budgetRub', 'Бюджет, ₽', '56000'], ['coinBuyRub', 'Цена 1 монеты, ₽', '0,08'], ['coinBuyUah', 'Цена 1 монеты, ₴', '0,0558']],
+    fields: [['budgetUah', 'Бюджет, ₴'], ['budgetRub', 'Бюджет, ₽'], ['coinBuyRub', 'Цена 1 монеты, ₽'], ['coinBuyUah', 'Цена 1 монеты, ₴']],
     results: [['coinsFromRub', 'Монет за рубли'], ['coinsFromUah', 'Монет за гривны']] },
   { title: 'Монеты → рубли, USDT и гривны',
-    fields: [['coinsSold', 'Количество монет', '1700000'], ['coinSellRub', 'Цена 1 монеты, ₽', '0,085'], ['coinSellUah', 'Цена 1 монеты, ₴', '']],
+    fields: [['coinsSold', 'Количество монет'], ['coinSellRub', 'Цена 1 монеты, ₽'], ['coinSellUah', 'Цена 1 монеты, ₴']],
     results: [['coinRub', 'Получишь, ₽'], ['coinUsdt', 'Получишь, USDT'], ['coinUah', 'Получишь, ₴']],
-    note: 'При пустой цене в гривнах Excel показывает 0 ₴.' },
+    note: 'При пустой цене в гривнах результат в гривнах остаётся пустым.' },
   { title: 'Эфир и Солярис',
-    fields: [['ether', 'Эфир, шт.', '105000'], ['solaris', 'Солярис, шт.', '724']],
+    fields: [['ether', 'Эфир, шт.'], ['solaris', 'Солярис, шт.']],
     results: [['etherCoins', 'Монет за эфир'], ['solarisCoins', 'Монет за Солярис']],
     note: '10 эфира за 32 монеты. 1 Солярис за 100 монет.' },
   { title: 'Дополнительный расчёт', results: [['extra', '2 400 000 × 1 700 000']] },
@@ -109,7 +110,7 @@ function renderPanel(panel, rates = false) {
     fields.className = 'rates-fields';
   }
   section.append(fields);
-  for (const [key, label, initial] of panel.fields ?? []) {
+  for (const [key, label] of panel.fields ?? []) {
     const row = document.createElement('div');
     row.className = 'row';
     const caption = document.createElement('label');
@@ -119,7 +120,7 @@ function renderPanel(panel, rates = false) {
     input.id = key;
     input.inputMode = 'decimal';
     input.autocomplete = 'off';
-    input.defaultValue = initial;
+    input.value = '';
     row.append(caption, input);
     fields.append(row);
     inputs.set(key, input);
@@ -144,18 +145,45 @@ function renderPanel(panel, rates = false) {
   return section;
 }
 
+const requiredFields = {
+  adenaBought: ['adenaBudget', 'adenaBuyRub'],
+  coinsNeeded: ['adenaTarget', 'coinInAdena'],
+  packsNeeded: ['adenaTarget', 'coinInAdena'],
+  packsRub: ['adenaTarget', 'coinInAdena'],
+  adenaRub: ['adenaSold', 'adenaSellRub'],
+  adenaUsdt: ['adenaSold', 'adenaSellRub', 'rubRate'],
+  adenaUah: ['adenaSold', 'adenaSellUah'],
+  coinsFromRub: ['budgetRub', 'coinBuyRub'],
+  coinsFromUah: ['budgetUah', 'coinBuyUah'],
+  coinRub: ['coinsSold', 'coinSellRub'],
+  coinUsdt: ['coinsSold', 'coinSellRub', 'rubRate'],
+  coinUah: ['coinsSold', 'coinSellUah'],
+  etherCoins: ['ether'],
+  solarisCoins: ['solaris'],
+};
+
+function resizeField(field) {
+  const chars = Math.max(7, field.value.length);
+  field.style.setProperty('--field-chars', String(chars));
+}
+
 function update() {
+  const filled = new Set();
   const values = {};
   for (const [key, input] of inputs) {
     const value = parseNumber(input.value);
     values[key] = value;
+    if (input.value.trim()) filled.add(key);
+    resizeField(input);
     input.setAttribute('aria-invalid', String(Number.isNaN(value)));
   }
   for (const [key, value] of Object.entries(calculate(values))) {
     const output = outputs.get(key);
-    const finite = Number.isFinite(value);
-    output.toggleAttribute('data-error', !finite);
-    output.value = finite ? format.format(value) : 'Проверь ввод';
+    const ready = key === 'extra' ? filled.size > 0 : requiredFields[key].every(field => filled.has(field));
+    const invalid = ready && !Number.isFinite(value);
+    output.toggleAttribute('data-error', invalid);
+    output.value = ready ? (invalid ? 'Проверь ввод' : format.format(value)) : '';
+    resizeField(output);
   }
 }
 
@@ -167,14 +195,8 @@ document.querySelector('#panels').append(renderPanel(rates, true), grid);
 form.addEventListener('input', update);
 form.addEventListener('reset', event => {
   event.preventDefault();
-  for (const input of inputs.values()) {
-    input.value = '';
-    input.setAttribute('aria-invalid', 'false');
-  }
-  for (const output of outputs.values()) {
-    output.value = '';
-    output.toggleAttribute('data-error', false);
-  }
+  for (const input of inputs.values()) input.value = '';
+  update();
 });
 form.addEventListener('submit', event => event.preventDefault());
 update();
