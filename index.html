@@ -41,7 +41,7 @@
   <h1 id="calculator-menu-heading">Калькуляторы</h1>
   <div class="calculator-picker" role="group" aria-labelledby="calculator-menu-heading">
     <button type="button" id="coin-calculator-toggle" aria-controls="calculator" aria-expanded="false">Калькулятор Монет</button>
-    <button type="button" disabled>Калькулятор 2</button>
+    <button type="button" id="craft-toggle" aria-controls="craft" aria-expanded="false">Калькулятор крафта</button>
     <button type="button" disabled>Калькулятор 3</button>
     <button type="button" disabled>Калькулятор 4</button>
     <button type="button" disabled>Калькулятор 5</button>
@@ -51,6 +51,14 @@
     <header><h2 id="coin-calculator-heading" class="calculator-heading">Калькулятор Монет</h2><button type="reset">Сбросить значения</button></header>
     <div id="panels"></div>
   </form>
+  <section id="craft" aria-labelledby="craft-heading" hidden>
+    <h2 id="craft-heading">Калькулятор крафта</h2>
+    <div class="row"><label for="craft-chance">Шанс успеха, %</label><input id="craft-chance" inputmode="decimal" autocomplete="off" value="0,2"></div>
+    <div class="row"><label for="craft-cost">Печений за попытку</label><input id="craft-cost" inputmode="decimal" autocomplete="off" value="10"></div>
+    <div class="row"><span id="craft-attempts-label">Среднее число попыток</span><output id="craft-attempts" aria-labelledby="craft-attempts-label"></output></div>
+    <div class="row"><span id="craft-total-label">Средняя стоимость, печений</span><output id="craft-total" aria-labelledby="craft-total-label"></output></div>
+    <p>Среднее до первого успеха при постоянном шансе. Фактический расход может отличаться.</p>
+  </section>
 </main>
 <script>
 'use strict';
@@ -130,12 +138,23 @@ function formatInput(field) {
   field.value = fraction ? `${grouped === '-' || grouped === '+' ? grouped + '0' : grouped},${fraction}` : grouped;
 }
 const form = document.querySelector('#calculator');
-const coinToggle = document.querySelector('#coin-calculator-toggle');
-coinToggle.addEventListener('click', () => {
-  const isOpen = form.hidden;
-  form.hidden = !isOpen;
-  coinToggle.setAttribute('aria-expanded', String(isOpen));
-});
+const craft = document.querySelector('#craft');
+const calculatorViews = [
+  [document.querySelector('#coin-calculator-toggle'), form],
+  [document.querySelector('#craft-toggle'), craft],
+];
+
+for (const [toggle, panel] of calculatorViews) {
+  toggle.addEventListener('click', () => {
+    const open = panel.hidden;
+    for (const [button, view] of calculatorViews) {
+      const selected = open && view === panel;
+      view.hidden = !selected;
+      button.setAttribute('aria-expanded', String(selected));
+    }
+  });
+}
+
 const inputs = new Map();
 const outputs = new Map();
 
@@ -235,6 +254,37 @@ form.addEventListener('reset', event => {
 });
 form.addEventListener('submit', event => event.preventDefault());
 update();
+const craftChance = document.querySelector('#craft-chance');
+const craftCost = document.querySelector('#craft-cost');
+const craftAttempts = document.querySelector('#craft-attempts');
+const craftTotal = document.querySelector('#craft-total');
+
+function updateCraft() {
+  const hasChance = craftChance.value.trim() !== '';
+  const hasCost = craftCost.value.trim() !== '';
+  const chance = parseNumber(craftChance.value);
+  const cost = parseNumber(craftCost.value);
+  const validChance = chance > 0 && chance <= 100;
+  const validCost = Number.isFinite(cost) && cost >= 0;
+  const attempts = 100 / chance;
+  const total = attempts * cost;
+  const badChance = hasChance && (!validChance || !Number.isFinite(attempts));
+  const badCost = hasCost && !validCost;
+  craftChance.setAttribute('aria-invalid', String(badChance));
+  craftCost.setAttribute('aria-invalid', String(badCost));
+  craftAttempts.toggleAttribute('data-error', badChance);
+  const ready = hasChance && hasCost && !badChance && !badCost;
+  const badTotal = ready && !Number.isFinite(total);
+  craftTotal.toggleAttribute('data-error', badTotal);
+  craftAttempts.value = !hasChance ? '' : badChance ? 'Проверь шанс' : quantityFormat.format(attempts);
+  craftTotal.value = !ready ? '' : badTotal ? 'Слишком большое число' : quantityFormat.format(total);
+}
+
+for (const field of [craftChance, craftCost]) {
+  field.addEventListener('input', updateCraft);
+  field.addEventListener('blur', () => formatInput(field));
+}
+updateCraft();
 </script>
 </body>
 </html>
