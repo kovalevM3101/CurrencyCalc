@@ -66,6 +66,8 @@
         <h2 id="sphere-heading">Сфера Кровавой Души</h2>
         <div class="row"><label for="sphere-level">Желаемый уровень</label><select id="sphere-level"><option value="">Выбери уровень</option></select></div>
         <div class="row"><span id="sphere-total-label">Сфер 0 уровня в среднем</span><output id="sphere-total" aria-labelledby="sphere-total-label"></output></div>
+        <div class="row"><span id="sphere-adena-label">Стоимость, адена</span><output id="sphere-adena" aria-labelledby="sphere-adena-label"></output></div>
+        <p>Одна попытка стоит 2 370 000 адены: 300 000 за синтез и 2 070 000 за Святую Воду Верховного Жреца при покупке в Гиране за Свет. Стоимость показывает средний расход на синтез до выбранного уровня.</p>
         <p>Расчёт предполагает, что при каждой попытке расходуется одна сфера предыдущего уровня. Фактический расход зависит от удачи.</p>
       </section>
       <section><h2>Расчёт 2</h2><p>Скоро</p></section>
@@ -301,6 +303,9 @@ const sphereChances = [50, 45, 45, 40, 40, 30, 30, 24, 14, 7];
 const sphereLevel = document.querySelector('#sphere-level');
 const sphereTotal = document.querySelector('#sphere-total');
 const sphereCosts = [1];
+const sphereAdena = document.querySelector('#sphere-adena');
+const synthesisCost = 300_000 + 2_070_000;
+const sphereAdenaCosts = [0];
 
 for (const [index, chance] of sphereChances.entries()) {
   const level = index + 1;
@@ -309,11 +314,13 @@ for (const [index, chance] of sphereChances.entries()) {
   option.textContent = String(level);
   sphereLevel.append(option);
   sphereCosts.push(sphereCosts[index] * 100 / chance);
+  sphereAdenaCosts.push((sphereAdenaCosts[index] + synthesisCost) * 100 / chance);
 }
 
 sphereLevel.addEventListener('change', () => {
   const level = Number(sphereLevel.value);
   sphereTotal.value = level ? quantityFormat.format(sphereCosts[level]) : '';
+  sphereAdena.value = level ? quantityFormat.format(sphereAdenaCosts[level]) : '';
 });
 </script>
 </body>
