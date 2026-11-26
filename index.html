@@ -101,6 +101,8 @@
         <div class="row"><label for="exceptional-gems-level">Желаемый уровень</label><select id="exceptional-gems-level"><option value="">Выбери уровень</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
         <div class="row"><span id="exceptional-upgrade-energy-label">Энергии Самоцвета в среднем</span><output id="exceptional-upgrade-energy" aria-labelledby="exceptional-upgrade-energy-label"></output></div>
         <div class="row"><span id="exceptional-upgrade-adena-label">Стоимость синтеза, адена</span><output id="exceptional-upgrade-adena" aria-labelledby="exceptional-upgrade-adena-label"></output></div>
+        <div class="row"><label for="exceptional-energy-price">Цена одной Энергии Самоцвета, адена</label><input id="exceptional-energy-price" inputmode="decimal" autocomplete="off"></div>
+        <div class="row"><span id="exceptional-full-label">С учётом цены энергии, адена</span><output id="exceptional-full" aria-labelledby="exceptional-full-label"></output></div>
         <p>Расчёт от готового Исключительного камня 1-го уровня. Каждая попытка расходует 1 Энергию Самоцвета и 300 000 адены. При неудаче камень возвращается на 1-й уровень.</p>
       </section>
     </div>
@@ -402,7 +404,7 @@ function updateLargeGem() {
   const attempts = largeGemAttempts[level - 1];
   largeGemEnergy.value = level ? quantityFormat.format(attempts) : '';
   largeGemAdena.value = level ? quantityFormat.format(attempts * gemSynthesisFee) : '';
-  updateGemFullCosts();
+  updateLargeGemFull();
 }
 
 const exceptionalLevel = document.querySelector('#exceptional-gems-level');
@@ -414,27 +416,37 @@ function updateExceptionalGem() {
   const attempts = exceptionalGemAttempts[level - 1];
   exceptionalUpgradeEnergy.value = level ? quantityFormat.format(attempts) : '';
   exceptionalUpgradeAdena.value = level ? quantityFormat.format(attempts * gemSynthesisFee) : '';
+  updateExceptionalGemFull();
 }
-const gemEnergyPrice = document.querySelector('#gem-energy-price');
-const largeGemFull = document.querySelector('#large-gems-full');
+function bindGemEnergyPrice(priceField, output, levelField, attemptsByLevel) {
+  function update() {
+    const hasPrice = priceField.value.trim() !== '';
+    const price = parseNumber(priceField.value);
+    const valid = Number.isFinite(price) && price >= 0;
+    priceField.setAttribute('aria-invalid', String(hasPrice && !valid));
+    const level = Number(levelField.value);
+    const ready = hasPrice && valid && level > 0;
+    const total = attemptsByLevel[level - 1] * (gemSynthesisFee + price);
+    const overflow = ready && !Number.isFinite(total);
+    output.toggleAttribute('data-error', overflow);
+    output.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
+  }
 
-function updateGemFullCosts() {
-  const hasPrice = gemEnergyPrice.value.trim() !== '';
-  const price = parseNumber(gemEnergyPrice.value);
-  const valid = Number.isFinite(price) && price >= 0;
-  gemEnergyPrice.setAttribute('aria-invalid', String(hasPrice && !valid));
-  const level = Number(largeGemLevel.value);
-  const attempts = largeGemAttempts[level - 1];
-  const ready = hasPrice && valid && level > 0;
-  const total = attempts * (gemSynthesisFee + price);
-  const overflow = ready && !Number.isFinite(total);
-  largeGemFull.toggleAttribute('data-error', overflow);
-  largeGemFull.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
+  priceField.addEventListener('input', update);
+  priceField.addEventListener('blur', () => formatInput(priceField));
+  return update;
 }
+
+const updateLargeGemFull = bindGemEnergyPrice(
+  document.querySelector('#gem-energy-price'), document.querySelector('#large-gems-full'),
+  largeGemLevel, largeGemAttempts,
+);
+const updateExceptionalGemFull = bindGemEnergyPrice(
+  document.querySelector('#exceptional-energy-price'), document.querySelector('#exceptional-full'),
+  exceptionalLevel, exceptionalGemAttempts,
+);
 
 largeGemLevel.addEventListener('change', updateLargeGem);
-gemEnergyPrice.addEventListener('input', updateGemFullCosts);
-gemEnergyPrice.addEventListener('blur', () => formatInput(gemEnergyPrice));
 exceptionalLevel.addEventListener('change', updateExceptionalGem);
 updateLargeGem();
 updateExceptionalGem();
