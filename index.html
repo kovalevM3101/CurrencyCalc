@@ -19,7 +19,7 @@
   .rates-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 43%); align-items: center; gap: 10px; padding: 4px 0; }
   label, .row span { font-size: 14px; }
-  input, output { justify-self: end; width: calc(var(--field-chars, 7) * 1ch + 20px); max-width: 100%; min-width: 0; min-height: 40px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
+  input, output { justify-self: end; width: 100%; max-width: 220px; min-width: 0; min-height: 40px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
   input, output:empty { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
   input[aria-invalid="true"] { border-color: #ff9d95; }
   output { overflow-wrap: anywhere; }
@@ -113,7 +113,6 @@ function formatInput(field) {
   const [whole, fraction] = raw.replace('.', ',').split(',');
   const grouped = (whole || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
   field.value = fraction ? `${grouped === '-' || grouped === '+' ? grouped + '0' : grouped},${fraction}` : grouped;
-  resizeField(field);
 }
 const form = document.querySelector('#calculator');
 const inputs = new Map();
@@ -183,11 +182,6 @@ const requiredFields = {
   solarisCoins: ['solaris'],
 };
 
-function resizeField(field) {
-  const chars = Math.max(7, field.value.length);
-  field.style.setProperty('--field-chars', String(chars));
-}
-
 function update() {
   const filled = new Set();
   const values = {};
@@ -195,7 +189,6 @@ function update() {
     const value = parseNumber(input.value);
     values[key] = value;
     if (input.value.trim()) filled.add(key);
-    resizeField(input);
     input.setAttribute('aria-invalid', String(Number.isNaN(value)));
   }
   for (const [key, value] of Object.entries(calculate(values))) {
@@ -205,7 +198,6 @@ function update() {
     output.toggleAttribute('data-error', invalid);
     const formatter = resultFormats[key] ?? quantityFormat;
     output.value = ready ? (invalid ? 'Проверь ввод' : formatter.format(value)) : '';
-    resizeField(output);
   }
 }
 
