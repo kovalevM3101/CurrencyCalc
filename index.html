@@ -19,11 +19,11 @@
   .rates-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 43%); align-items: center; gap: 10px; padding: 4px 0; }
   label, .row span { font-size: 14px; }
-  input { width: 100%; min-width: 0; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
+  input, output { width: 100%; min-width: 0; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
   input { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
   input[aria-invalid="true"] { border-color: #ff9d95; }
-  .result { background: #183128; border-color: transparent; color: #a3efc9; cursor: text; }
-  .result[data-error] { color: #ffd492; }
+  output { background: #183128; color: #a3efc9; overflow-wrap: anywhere; }
+  output[data-error] { color: #ffd492; }
   button { font: inherit; color: #edf0f6; border: 1px solid #526078; border-radius: 8px; background: #202631; padding: 8px 12px; cursor: pointer; }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
   @media (max-width: 740px) { .grid, .rates-fields { grid-template-columns: 1fr; } }
@@ -130,12 +130,7 @@ function renderPanel(panel, rates = false) {
     const caption = document.createElement('span');
     caption.id = `${key}-label`;
     caption.textContent = label;
-    const output = document.createElement('input');
-    output.type = 'text';
-    output.className = 'result';
-    output.readOnly = true;
-    output.addEventListener('focus', () => output.select());
-    output.addEventListener('click', () => output.select());
+    const output = document.createElement('output');
     output.setAttribute('aria-labelledby', caption.id);
     row.append(caption, output);
     section.append(row);
