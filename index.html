@@ -92,6 +92,8 @@
         <div class="row"><label for="large-gems-level">Желаемый уровень</label><select id="large-gems-level"><option value="">Выбери уровень</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
         <div class="row"><span id="large-gems-energy-label">Энергии Самоцвета в среднем</span><output id="large-gems-energy" aria-labelledby="large-gems-energy-label"></output></div>
         <div class="row"><span id="large-gems-adena-label">Стоимость синтеза, адена</span><output id="large-gems-adena" aria-labelledby="large-gems-adena-label"></output></div>
+        <div class="row"><label for="gem-energy-price">Цена одной Энергии Самоцвета, адена</label><input id="gem-energy-price" inputmode="decimal" autocomplete="off"></div>
+        <div class="row"><span id="large-gems-full-label">С учётом цены энергии, адена</span><output id="large-gems-full" aria-labelledby="large-gems-full-label"></output></div>
         <p>Одна попытка стоит 1 Энергию Самоцвета и 300 000 адены. При неудаче камень возвращается на 1-й уровень.</p>
       </section>
       <section aria-labelledby="exceptional-gems-heading">
@@ -99,6 +101,8 @@
         <div class="row"><span id="exceptional-gems-required-label">Больших камней 5-го уровня</span><output id="exceptional-gems-required" aria-labelledby="exceptional-gems-required-label">2</output></div>
         <div class="row"><span id="exceptional-gems-energy-label">Энергии Самоцвета с 1-го уровня, в среднем</span><output id="exceptional-gems-energy" aria-labelledby="exceptional-gems-energy-label"></output></div>
         <div class="row"><span id="exceptional-gems-adena-label">Стоимость с 1-го уровня, адена</span><output id="exceptional-gems-adena" aria-labelledby="exceptional-gems-adena-label"></output></div>
+        <div class="row"><span id="exceptional-gems-full-label">С учётом цены энергии, адена</span><output id="exceptional-gems-full" aria-labelledby="exceptional-gems-full-label"></output></div>
+        <p>Цена энергии берётся из окна «Синтез Больших камней».</p>
         <p>Два Больших камня 5-го уровня дают Исключительный камень 1-го уровня с шансом 100%. Финальное объединение стоит 300 000 адены. Энергия расходуется при подготовке Больших камней.</p>
       </section>
     </div>
@@ -389,16 +393,44 @@ for (const chance of [40, 30, 15, 10]) {
 const largeGemLevel = document.querySelector('#large-gems-level');
 const largeGemEnergy = document.querySelector('#large-gems-energy');
 const largeGemAdena = document.querySelector('#large-gems-adena');
-largeGemLevel.addEventListener('change', () => {
+function updateLargeGem() {
   const level = Number(largeGemLevel.value);
   const attempts = largeGemAttempts[level - 1];
   largeGemEnergy.value = level ? quantityFormat.format(attempts) : '';
   largeGemAdena.value = level ? quantityFormat.format(attempts * gemSynthesisFee) : '';
-});
+  updateGemFullCosts();
+}
 
 const exceptionalPrepAttempts = 2 * largeGemAttempts.at(-1);
 document.querySelector('#exceptional-gems-energy').value = quantityFormat.format(exceptionalPrepAttempts);
 document.querySelector('#exceptional-gems-adena').value = quantityFormat.format((exceptionalPrepAttempts + 1) * gemSynthesisFee);
+const gemEnergyPrice = document.querySelector('#gem-energy-price');
+const largeGemFull = document.querySelector('#large-gems-full');
+const exceptionalGemFull = document.querySelector('#exceptional-gems-full');
+
+function updateGemFullCosts() {
+  const hasPrice = gemEnergyPrice.value.trim() !== '';
+  const price = parseNumber(gemEnergyPrice.value);
+  const valid = Number.isFinite(price) && price >= 0;
+  gemEnergyPrice.setAttribute('aria-invalid', String(hasPrice && !valid));
+  const level = Number(largeGemLevel.value);
+  const attempts = largeGemAttempts[level - 1];
+  const includeEnergy = hasPrice && valid;
+  const results = [
+    [largeGemFull, includeEnergy && level > 0, attempts * (gemSynthesisFee + price)],
+    [exceptionalGemFull, includeEnergy, exceptionalPrepAttempts * (gemSynthesisFee + price) + gemSynthesisFee],
+  ];
+  for (const [output, ready, total] of results) {
+    const overflow = ready && !Number.isFinite(total);
+    output.toggleAttribute('data-error', overflow);
+    output.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
+  }
+}
+
+largeGemLevel.addEventListener('change', updateLargeGem);
+gemEnergyPrice.addEventListener('input', updateGemFullCosts);
+gemEnergyPrice.addEventListener('blur', () => formatInput(gemEnergyPrice));
+updateLargeGem();
 </script>
 </body>
 </html>
