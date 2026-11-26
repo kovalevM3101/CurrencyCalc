@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Игровая бухгалтерия</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #101319; color: #edf0f6; font: 16px/1.5 system-ui, sans-serif; }
+  main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: clamp(24px, 5vw, 64px) 0; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+  h1 { margin: 0; font-size: clamp(29px, 5vw, 52px); letter-spacing: -.045em; line-height: 1.1; }
+  h2 { margin: 0 0 15px; font-size: 19px; line-height: 1.25; }
+  p { margin: 12px 0 0; color: #b3bdcc; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  section { min-width: 0; padding: 19px; background: #191e27; border: 1px solid #313a48; border-radius: 15px; }
+  .rates { margin-bottom: 16px; }
+  .rates-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 43%); align-items: center; gap: 10px; padding: 4px 0; }
+  label, .row span { font-size: 14px; }
+  input, output { width: 100%; min-width: 0; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
+  input { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
+  input[aria-invalid="true"] { border-color: #ff9d95; }
+  output { background: #183128; color: #a3efc9; overflow-wrap: anywhere; }
+  output[data-error] { color: #ffd492; }
+  button { font: inherit; color: #edf0f6; border: 1px solid #526078; border-radius: 8px; background: #202631; padding: 8px 12px; cursor: pointer; }
+  :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
+  @media (max-width: 740px) { .grid, .rates-fields { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <form id="calculator">
+    <header><h1>Игровая бухгалтерия</h1><button type="reset">Сбросить значения</button></header>
+    <div id="panels"></div>
+  </form>
+</main>
+<script>
+'use strict';
+
+const panels = [
+  { title: 'Курсы USDT',
+    fields: [['rubRate', '₽ за 1 USDT', '86,6'], ['uahRate', '₴ за 1 USDT', '45']],
+    note: 'Курс в гривнах — справочное поле. В формулах листа используется курс в рублях.' },
+  { title: 'Рубли → адена',
+    fields: [['adenaBudget', 'Бюджет, ₽', '80000'], ['adenaBuyRub', 'Цена 1 млрд адены, ₽', '40']],
+    results: [['adenaBought', 'Получишь адены, млрд']] },
+  { title: 'Покупка заданного объёма адены',
+    fields: [['adenaTarget', 'Нужно адены', '100000000000'], ['coinInAdena', 'Цена 1 монеты, адена', '3300000']],
+    results: [['coinsNeeded', 'Нужно монет'], ['packsNeeded', 'Нужно упаковок по 3 200 монет'], ['packsRub', 'Стоимость, ₽']],
+    note: 'Упаковка стоит 400 ₽. Дробное число упаковок учитывается в стоимости.' },
+  { title: 'Адена → рубли, USDT и гривны',
+    fields: [['adenaSold', 'Количество адены, млрд', '30'], ['adenaSellRub', 'Цена 1 млрд адены, ₽', '37'], ['adenaSellUah', 'Цена 1 млрд адены, ₴', '23']],
+    results: [['adenaRub', 'Получишь, ₽'], ['adenaUsdt', 'Получишь, USDT'], ['adenaUah', 'Получишь, ₴']] },
+  { title: 'Рубли и гривны → монеты',
+    fields: [['budgetUah', 'Бюджет, ₴', '200'], ['budgetRub', 'Бюджет, ₽', '56000'], ['coinBuyRub', 'Цена 1 монеты, ₽', '0,08'], ['coinBuyUah', 'Цена 1 монеты, ₴', '0,0558']],
+    results: [['coinsFromRub', 'Монет за рубли'], ['coinsFromUah', 'Монет за гривны']] },
+  { title: 'Монеты → рубли, USDT и гривны',
+    fields: [['coinsSold', 'Количество монет', '1700000'], ['coinSellRub', 'Цена 1 монеты, ₽', '0,085'], ['coinSellUah', 'Цена 1 монеты, ₴', '']],
+    results: [['coinRub', 'Получишь, ₽'], ['coinUsdt', 'Получишь, USDT'], ['coinUah', 'Получишь, ₴']],
+    note: 'При пустой цене в гривнах Excel показывает 0 ₴.' },
+  { title: 'Эфир и Солярис',
+    fields: [['ether', 'Эфир, шт.', '105000'], ['solaris', 'Солярис, шт.', '724']],
+    results: [['etherCoins', 'Монет за эфир'], ['solarisCoins', 'Монет за Солярис']],
+    note: '10 эфира за 32 монеты. 1 Солярис за 100 монет.' },
+  { title: 'Дополнительный расчёт', results: [['extra', '2 400 000 × 1 700 000']] },
+];
+
+function calculate(values) {
+  const coinsNeeded = values.adenaTarget / values.coinInAdena;
+  const packsNeeded = coinsNeeded / 3200;
+  const adenaRub = values.adenaSold * values.adenaSellRub;
+  const coinRub = values.coinsSold * values.coinSellRub;
+  return {
+    adenaBought: values.adenaBudget / values.adenaBuyRub,
+    coinsNeeded, packsNeeded, packsRub: packsNeeded * 400,
+    adenaRub, adenaUsdt: adenaRub / values.rubRate, adenaUah: values.adenaSold * values.adenaSellUah,
+    coinsFromRub: values.budgetRub / values.coinBuyRub,
+    coinsFromUah: values.budgetUah / values.coinBuyUah,
+    coinRub, coinUsdt: coinRub / values.rubRate, coinUah: values.coinsSold * values.coinSellUah,
+    etherCoins: values.ether / 10 * 32,
+    solarisCoins: values.solaris * 100,
+    extra: 2400000 * 1700000,
+  };
+}
+
+function parseNumber(raw) {
+  const normalized = raw.trim().replace(/[\s\u00a0\u202f]/g, '').replace(',', '.');
+  if (!normalized) return 0;
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return NaN;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : NaN;
+}
+
+const format = new Intl.NumberFormat('ru-RU', { maximumSignificantDigits: 15 });
+const form = document.querySelector('#calculator');
+const inputs = new Map();
+const outputs = new Map();
+
+function renderPanel(panel, rates = false) {
+  const section = document.createElement('section');
+  const heading = document.createElement('h2');
+  heading.textContent = panel.title;
+  section.append(heading);
+  const fields = document.createElement('div');
+  if (rates) {
+    section.className = 'rates';
+    fields.className = 'rates-fields';
+  }
+  section.append(fields);
+  for (const [key, label, initial] of panel.fields ?? []) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const caption = document.createElement('label');
+    caption.htmlFor = key;
+    caption.textContent = label;
+    const input = document.createElement('input');
+    input.id = key;
+    input.inputMode = 'decimal';
+    input.autocomplete = 'off';
+    input.defaultValue = initial;
+    row.append(caption, input);
+    fields.append(row);
+    inputs.set(key, input);
+  }
+  for (const [key, label] of panel.results ?? []) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const caption = document.createElement('span');
+    caption.id = `${key}-label`;
+    caption.textContent = label;
+    const output = document.createElement('output');
+    output.setAttribute('aria-labelledby', caption.id);
+    row.append(caption, output);
+    section.append(row);
+    outputs.set(key, output);
+  }
+  if (panel.note) {
+    const note = document.createElement('p');
+    note.textContent = panel.note;
+    section.append(note);
+  }
+  return section;
+}
+
+function update() {
+  const values = {};
+  for (const [key, input] of inputs) {
+    const value = parseNumber(input.value);
+    values[key] = value;
+    input.setAttribute('aria-invalid', String(Number.isNaN(value)));
+  }
+  for (const [key, value] of Object.entries(calculate(values))) {
+    const output = outputs.get(key);
+    const finite = Number.isFinite(value);
+    output.toggleAttribute('data-error', !finite);
+    output.value = finite ? format.format(value) : 'Проверь ввод';
+  }
+}
+
+const [rates, ...calculators] = panels;
+const grid = document.createElement('div');
+grid.className = 'grid';
+grid.append(...calculators.map(panel => renderPanel(panel)));
+document.querySelector('#panels').append(renderPanel(rates, true), grid);
+form.addEventListener('input', update);
+form.addEventListener('reset', () => setTimeout(update, 0));
+form.addEventListener('submit', event => event.preventDefault());
+update();
+</script>
+</body>
+</html>
