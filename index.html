@@ -8,8 +8,6 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; background: #101319; color: #edf0f6; font: 16px/1.5 system-ui, sans-serif; }
-  body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgb(16 19 25 / 74%), rgb(16 19 25 / 24%) 50%, rgb(16 19 25 / 36%)), url('./background.png') center center / cover no-repeat; }
-  body { isolation: isolate; min-height: 100vh; }
   main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: clamp(24px, 5vw, 64px) 0; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
   h1 { margin: 0; font-size: clamp(29px, 5vw, 52px); letter-spacing: -.045em; line-height: 1.1; }
