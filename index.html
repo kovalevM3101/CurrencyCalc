@@ -30,7 +30,7 @@
   .calculator-picker button { min-height: 56px; text-align: left; }
   .calculator-picker button[aria-expanded="true"] { background: #202e44; border-color: #88a9dc; }
   .calculator-picker button:disabled { color: #a8b2c2; background: #191e27; border-color: #313a48; cursor: default; }
-  #sphere-level, #chaos-level, #freya-level, #large-gems-level, #exceptional-gems-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
+  #sphere-level, #chaos-level, #freya-level, #large-gems-level, #exceptional-gems-level, #sparkling-gems-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
   .calculator-heading { margin: 0; font-size: clamp(22px, 4vw, 34px); }
   @media (max-width: 600px) { .calculator-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
@@ -104,6 +104,15 @@
         <div class="row"><label for="exceptional-energy-price">Цена одной Энергии Самоцвета, адена</label><input id="exceptional-energy-price" inputmode="decimal" autocomplete="off"></div>
         <div class="row"><span id="exceptional-full-label">С учётом цены энергии, адена</span><output id="exceptional-full" aria-labelledby="exceptional-full-label"></output></div>
         <p>Расчёт от готового Исключительного камня 1-го уровня. Каждая попытка расходует 1 Энергию Самоцвета и 300 000 адены. При неудаче камень возвращается на 1-й уровень.</p>
+      </section>
+      <section aria-labelledby="sparkling-gems-heading">
+        <h2 id="sparkling-gems-heading">Исключительные камни 5–10 Сверкающей Энергией</h2>
+        <div class="row"><label for="sparkling-gems-level">Желаемый уровень</label><select id="sparkling-gems-level"><option value="">Выбери уровень</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></div>
+        <div class="row"><span id="sparkling-energy-label">Сверкающей Энергии в среднем</span><output id="sparkling-energy" aria-labelledby="sparkling-energy-label"></output></div>
+        <div class="row"><span id="sparkling-adena-label">Стоимость синтеза, адена</span><output id="sparkling-adena" aria-labelledby="sparkling-adena-label"></output></div>
+        <div class="row"><label for="sparkling-price">Цена одной Сверкающей Энергии, адена</label><input id="sparkling-price" inputmode="decimal" autocomplete="off"></div>
+        <div class="row"><span id="sparkling-full-label">С учётом цены энергии, адена</span><output id="sparkling-full" aria-labelledby="sparkling-full-label"></output></div>
+        <p>Расчёт от готового камня 5-го уровня. На каждый переход шанс 10%. Попытка расходует 1 Сверкающую Энергию и 300 000 адены. При неудаче уровень сохраняется.</p>
       </section>
     </div>
   </div>
@@ -418,15 +427,16 @@ function updateExceptionalGem() {
   exceptionalUpgradeAdena.value = level ? quantityFormat.format(attempts * gemSynthesisFee) : '';
   updateExceptionalGemFull();
 }
-function bindGemEnergyPrice(priceField, output, levelField, attemptsByLevel) {
+function bindGemEnergyPrice(priceField, output, levelField, attemptsByLevel, firstLevel = 1) {
   function update() {
     const hasPrice = priceField.value.trim() !== '';
     const price = parseNumber(priceField.value);
     const valid = Number.isFinite(price) && price >= 0;
     priceField.setAttribute('aria-invalid', String(hasPrice && !valid));
     const level = Number(levelField.value);
-    const ready = hasPrice && valid && level > 0;
-    const total = attemptsByLevel[level - 1] * (gemSynthesisFee + price);
+    const attempts = attemptsByLevel[level - firstLevel];
+    const ready = hasPrice && valid && attempts !== undefined;
+    const total = attempts * (gemSynthesisFee + price);
     const overflow = ready && !Number.isFinite(total);
     output.toggleAttribute('data-error', overflow);
     output.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
@@ -450,6 +460,25 @@ largeGemLevel.addEventListener('change', updateLargeGem);
 exceptionalLevel.addEventListener('change', updateExceptionalGem);
 updateLargeGem();
 updateExceptionalGem();
+const sparklingStartLevel = 5;
+const sparklingAttempts = Array.from({ length: 6 }, (_, steps) => steps * (100 / 10));
+const sparklingLevel = document.querySelector('#sparkling-gems-level');
+const sparklingEnergy = document.querySelector('#sparkling-energy');
+const sparklingAdena = document.querySelector('#sparkling-adena');
+const updateSparklingFull = bindGemEnergyPrice(
+  document.querySelector('#sparkling-price'), document.querySelector('#sparkling-full'),
+  sparklingLevel, sparklingAttempts, sparklingStartLevel,
+);
+
+function updateSparklingGem() {
+  const attempts = sparklingAttempts[Number(sparklingLevel.value) - sparklingStartLevel];
+  sparklingEnergy.value = attempts === undefined ? '' : quantityFormat.format(attempts);
+  sparklingAdena.value = attempts === undefined ? '' : quantityFormat.format(attempts * gemSynthesisFee);
+  updateSparklingFull();
+}
+
+sparklingLevel.addEventListener('change', updateSparklingGem);
+updateSparklingGem();
 </script>
 </body>
 </html>
