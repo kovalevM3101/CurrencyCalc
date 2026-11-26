@@ -20,11 +20,11 @@
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 43%); align-items: center; gap: 10px; padding: 4px 0; }
   label, .row span { font-size: 14px; }
   input, output { justify-self: end; width: calc(var(--field-chars, 7) * 1ch + 20px); max-width: 100%; min-width: 0; min-height: 40px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; border-radius: 7px; padding: 7px 9px; }
-  input { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
+  input, output:empty { background: #202e44; border: 1px solid #526f9c; color: #e3edff; }
   input[aria-invalid="true"] { border-color: #ff9d95; }
-  output { background: #183128; color: #a3efc9; overflow-wrap: anywhere; }
-  input:focus { width: calc(max(var(--field-chars, 7), 10) * 1ch + 20px); }
-  output[data-error] { color: #ffd492; }
+  output { overflow-wrap: anywhere; }
+  output:not(:empty) { background: #183128; border: 1px solid transparent; color: #a3efc9; }
+  output[data-error]:not(:empty) { color: #ffd492; }
   button { font: inherit; color: #edf0f6; border: 1px solid #526078; border-radius: 8px; background: #202631; padding: 8px 12px; cursor: pointer; }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
   @media (max-width: 740px) { .grid, .rates-fields { grid-template-columns: 1fr; } }
