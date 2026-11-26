@@ -26,14 +26,29 @@
   output { background: #183128; border: 1px solid #38634e; color: #a3efc9; }
   output[data-error] { color: #ffd492; }
   button { font: inherit; color: #edf0f6; border: 1px solid #526078; border-radius: 8px; background: #202631; padding: 8px 12px; cursor: pointer; }
+  .calculator-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 20px 0 28px; }
+  .calculator-picker button { min-height: 56px; text-align: left; }
+  .calculator-picker button[aria-expanded="true"] { background: #202e44; border-color: #88a9dc; }
+  .calculator-picker button:disabled { color: #a8b2c2; background: #191e27; border-color: #313a48; cursor: default; }
+  .calculator-heading { margin: 0; font-size: clamp(22px, 4vw, 34px); }
+  @media (max-width: 600px) { .calculator-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
   @media (max-width: 740px) { .grid, .rates-fields { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <main>
-  <form id="calculator">
-    <header><h1>Калькулятор Монет</h1><button type="reset">Сбросить значения</button></header>
+  <h1 id="calculator-menu-heading">Калькуляторы</h1>
+  <div class="calculator-picker" role="group" aria-labelledby="calculator-menu-heading">
+    <button type="button" id="coin-calculator-toggle" aria-controls="calculator" aria-expanded="false">Калькулятор Монет</button>
+    <button type="button" disabled>Калькулятор 2</button>
+    <button type="button" disabled>Калькулятор 3</button>
+    <button type="button" disabled>Калькулятор 4</button>
+    <button type="button" disabled>Калькулятор 5</button>
+    <button type="button" disabled>Калькулятор 6</button>
+  </div>
+  <form id="calculator" aria-labelledby="coin-calculator-heading" hidden>
+    <header><h2 id="coin-calculator-heading" class="calculator-heading">Калькулятор Монет</h2><button type="reset">Сбросить значения</button></header>
     <div id="panels"></div>
   </form>
 </main>
@@ -115,6 +130,12 @@ function formatInput(field) {
   field.value = fraction ? `${grouped === '-' || grouped === '+' ? grouped + '0' : grouped},${fraction}` : grouped;
 }
 const form = document.querySelector('#calculator');
+const coinToggle = document.querySelector('#coin-calculator-toggle');
+coinToggle.addEventListener('click', () => {
+  const isOpen = form.hidden;
+  form.hidden = !isOpen;
+  coinToggle.setAttribute('aria-expanded', String(isOpen));
+});
 const inputs = new Map();
 const outputs = new Map();
 
