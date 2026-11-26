@@ -94,7 +94,27 @@ function parseNumber(raw) {
   return Number.isFinite(value) ? value : NaN;
 }
 
-const format = new Intl.NumberFormat('ru-RU', { maximumSignificantDigits: 15 });
+const quantityFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 });
+const currencyFormat = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const usdtFormat = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+const resultFormats = {
+  packsRub: currencyFormat,
+  adenaRub: currencyFormat,
+  adenaUah: currencyFormat,
+  coinRub: currencyFormat,
+  coinUah: currencyFormat,
+  adenaUsdt: usdtFormat,
+  coinUsdt: usdtFormat,
+};
+
+function formatInput(field) {
+  const raw = field.value.trim().replace(/\s/g, '');
+  if (!raw || !Number.isFinite(parseNumber(raw))) return;
+  const [whole, fraction] = raw.replace('.', ',').split(',');
+  const grouped = (whole || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+  field.value = fraction ? `${grouped === '-' || grouped === '+' ? grouped + '0' : grouped},${fraction}` : grouped;
+  resizeField(field);
+}
 const form = document.querySelector('#calculator');
 const inputs = new Map();
 const outputs = new Map();
@@ -121,6 +141,7 @@ function renderPanel(panel, rates = false) {
     input.inputMode = 'decimal';
     input.autocomplete = 'off';
     input.value = '';
+    input.addEventListener('blur', () => formatInput(input));
     row.append(caption, input);
     fields.append(row);
     inputs.set(key, input);
@@ -182,7 +203,8 @@ function update() {
     const ready = key === 'extra' ? filled.size > 0 : requiredFields[key].every(field => filled.has(field));
     const invalid = ready && !Number.isFinite(value);
     output.toggleAttribute('data-error', invalid);
-    output.value = ready ? (invalid ? 'Проверь ввод' : format.format(value)) : '';
+    const formatter = resultFormats[key] ?? quantityFormat;
+    output.value = ready ? (invalid ? 'Проверь ввод' : formatter.format(value)) : '';
     resizeField(output);
   }
 }
