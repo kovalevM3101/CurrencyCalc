@@ -88,7 +88,6 @@ const panels = [
     fields: [['ether', 'Эфир, шт.'], ['solaris', 'Солярис, шт.']],
     results: [['etherCoins', 'Монет за эфир'], ['solarisCoins', 'Монет за Солярис']],
     note: '10 эфира за 32 монеты. 1 Солярис за 100 монет.' },
-  { title: 'Дополнительный расчёт', results: [['extra', '2 400 000 × 1 700 000']] },
 ];
 
 function calculate(values) {
@@ -105,7 +104,6 @@ function calculate(values) {
     coinRub, coinUsdt: coinRub / values.rubRate, coinUah: values.coinsSold * values.coinSellUah,
     etherCoins: values.ether / 10 * 32,
     solarisCoins: values.solaris * 100,
-    extra: 2400000 * 1700000,
   };
 }
 
@@ -233,7 +231,7 @@ function update() {
   }
   for (const [key, value] of Object.entries(calculate(values))) {
     const output = outputs.get(key);
-    const ready = key === 'extra' ? filled.size > 0 : requiredFields[key].every(field => filled.has(field));
+    const ready = requiredFields[key].every(field => filled.has(field));
     const invalid = ready && !Number.isFinite(value);
     output.toggleAttribute('data-error', invalid);
     const formatter = resultFormats[key] ?? quantityFormat;
