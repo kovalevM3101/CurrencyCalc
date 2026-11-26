@@ -165,7 +165,17 @@ grid.className = 'grid';
 grid.append(...calculators.map(panel => renderPanel(panel)));
 document.querySelector('#panels').append(renderPanel(rates, true), grid);
 form.addEventListener('input', update);
-form.addEventListener('reset', () => setTimeout(update, 0));
+form.addEventListener('reset', event => {
+  event.preventDefault();
+  for (const input of inputs.values()) {
+    input.value = '';
+    input.setAttribute('aria-invalid', 'false');
+  }
+  for (const output of outputs.values()) {
+    output.value = '';
+    output.toggleAttribute('data-error', false);
+  }
+});
 form.addEventListener('submit', event => event.preventDefault());
 update();
 </script>
