@@ -98,15 +98,10 @@
       </section>
       <section aria-labelledby="exceptional-gems-heading">
         <h2 id="exceptional-gems-heading">Исключительные камни 1–10</h2>
-        <div class="row"><label for="exceptional-gems-level">Желаемый уровень</label><select id="exceptional-gems-level"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
-        <div class="row"><span id="exceptional-upgrade-energy-label">Энергии на улучшение, в среднем</span><output id="exceptional-upgrade-energy" aria-labelledby="exceptional-upgrade-energy-label"></output></div>
-        <div class="row"><span id="exceptional-upgrade-adena-label">Адены на улучшение</span><output id="exceptional-upgrade-adena" aria-labelledby="exceptional-upgrade-adena-label"></output></div>
-        <div class="row"><span id="exceptional-gems-required-label">Больших камней 5-го уровня</span><output id="exceptional-gems-required" aria-labelledby="exceptional-gems-required-label">2</output></div>
-        <div class="row"><span id="exceptional-gems-energy-label">Всего энергии с изготовлением камня</span><output id="exceptional-gems-energy" aria-labelledby="exceptional-gems-energy-label"></output></div>
-        <div class="row"><span id="exceptional-gems-adena-label">Всего адены с изготовлением камня</span><output id="exceptional-gems-adena" aria-labelledby="exceptional-gems-adena-label"></output></div>
-        <div class="row"><span id="exceptional-gems-full-label">Полная стоимость с энергией, адена</span><output id="exceptional-gems-full" aria-labelledby="exceptional-gems-full-label"></output></div>
-        <p>Цена энергии берётся из окна «Синтез Больших камней».</p>
-        <p>Два Больших камня 5-го уровня дают Исключительный камень 1-го уровня с шансом 100%. Финальное объединение стоит 300 000 адены. На каждую попытку улучшения Исключительного камня уходит 1 Энергия Самоцвета и 300 000 адены. При неудаче камень возвращается на 1-й уровень.</p>
+        <div class="row"><label for="exceptional-gems-level">Желаемый уровень</label><select id="exceptional-gems-level"><option value="">Выбери уровень</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
+        <div class="row"><span id="exceptional-upgrade-energy-label">Энергии Самоцвета в среднем</span><output id="exceptional-upgrade-energy" aria-labelledby="exceptional-upgrade-energy-label"></output></div>
+        <div class="row"><span id="exceptional-upgrade-adena-label">Стоимость синтеза, адена</span><output id="exceptional-upgrade-adena" aria-labelledby="exceptional-upgrade-adena-label"></output></div>
+        <p>Расчёт от готового Исключительного камня 1-го уровня. Каждая попытка расходует 1 Энергию Самоцвета и 300 000 адены. При неудаче камень возвращается на 1-й уровень.</p>
       </section>
     </div>
   </div>
@@ -410,25 +405,18 @@ function updateLargeGem() {
   updateGemFullCosts();
 }
 
-const exceptionalPrepAttempts = 2 * largeGemAttempts.at(-1);
 const exceptionalLevel = document.querySelector('#exceptional-gems-level');
 const exceptionalUpgradeEnergy = document.querySelector('#exceptional-upgrade-energy');
 const exceptionalUpgradeAdena = document.querySelector('#exceptional-upgrade-adena');
-const exceptionalEnergy = document.querySelector('#exceptional-gems-energy');
-const exceptionalAdena = document.querySelector('#exceptional-gems-adena');
 
 function updateExceptionalGem() {
-  const attempts = exceptionalGemAttempts[Number(exceptionalLevel.value) - 1];
-  const totalEnergy = exceptionalPrepAttempts + attempts;
-  exceptionalUpgradeEnergy.value = quantityFormat.format(attempts);
-  exceptionalUpgradeAdena.value = quantityFormat.format(attempts * gemSynthesisFee);
-  exceptionalEnergy.value = quantityFormat.format(totalEnergy);
-  exceptionalAdena.value = quantityFormat.format((totalEnergy + 1) * gemSynthesisFee);
-  updateGemFullCosts();
+  const level = Number(exceptionalLevel.value);
+  const attempts = exceptionalGemAttempts[level - 1];
+  exceptionalUpgradeEnergy.value = level ? quantityFormat.format(attempts) : '';
+  exceptionalUpgradeAdena.value = level ? quantityFormat.format(attempts * gemSynthesisFee) : '';
 }
 const gemEnergyPrice = document.querySelector('#gem-energy-price');
 const largeGemFull = document.querySelector('#large-gems-full');
-const exceptionalGemFull = document.querySelector('#exceptional-gems-full');
 
 function updateGemFullCosts() {
   const hasPrice = gemEnergyPrice.value.trim() !== '';
@@ -437,16 +425,11 @@ function updateGemFullCosts() {
   gemEnergyPrice.setAttribute('aria-invalid', String(hasPrice && !valid));
   const level = Number(largeGemLevel.value);
   const attempts = largeGemAttempts[level - 1];
-  const includeEnergy = hasPrice && valid;
-  const results = [
-    [largeGemFull, includeEnergy && level > 0, attempts * (gemSynthesisFee + price)],
-    [exceptionalGemFull, includeEnergy, (exceptionalPrepAttempts + exceptionalGemAttempts[Number(exceptionalLevel.value) - 1]) * (gemSynthesisFee + price) + gemSynthesisFee],
-  ];
-  for (const [output, ready, total] of results) {
-    const overflow = ready && !Number.isFinite(total);
-    output.toggleAttribute('data-error', overflow);
-    output.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
-  }
+  const ready = hasPrice && valid && level > 0;
+  const total = attempts * (gemSynthesisFee + price);
+  const overflow = ready && !Number.isFinite(total);
+  largeGemFull.toggleAttribute('data-error', overflow);
+  largeGemFull.value = ready ? (overflow ? 'Слишком большое число' : quantityFormat.format(total)) : '';
 }
 
 largeGemLevel.addEventListener('change', updateLargeGem);
