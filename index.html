@@ -30,7 +30,7 @@
   .calculator-picker button { min-height: 56px; text-align: left; }
   .calculator-picker button[aria-expanded="true"] { background: #202e44; border-color: #88a9dc; }
   .calculator-picker button:disabled { color: #a8b2c2; background: #191e27; border-color: #313a48; cursor: default; }
-  #sphere-level, #chaos-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
+  #sphere-level, #chaos-level, #freya-level { justify-self: end; width: 100%; max-width: 220px; min-height: 40px; padding: 7px 9px; border: 1px solid #526f9c; border-radius: 7px; background: #202e44; color: #e3edff; font: inherit; }
   .calculator-heading { margin: 0; font-size: clamp(22px, 4vw, 34px); }
   @media (max-width: 600px) { .calculator-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   :focus-visible { outline: 2px solid #9ac3ff; outline-offset: 2px; }
@@ -80,7 +80,13 @@
         <div class="row"><label for="chaos-base-price">Цена одной сферы 0 уровня, адена</label><input id="chaos-base-price" inputmode="decimal" autocomplete="off"></div>
         <div class="row"><span id="chaos-full-cost-label">Полная стоимость, адена</span><output id="chaos-full-cost" aria-labelledby="chaos-full-cost-label"></output></div>
       </section>
-      <section><h2>Расчёт 3</h2><p>Скоро</p></section>
+      <section aria-labelledby="freya-heading">
+        <h2 id="freya-heading">Фрея/Рамона</h2>
+        <div class="row"><label for="freya-level">Желаемый уровень</label><select id="freya-level"><option value="">Выбери уровень</option></select></div>
+        <div class="row"><span id="freya-total-label">Предметов 0 уровня в среднем</span><output id="freya-total" aria-labelledby="freya-total-label"></output></div>
+        <div class="row"><span id="freya-adena-label">Стоимость синтеза, адена</span><output id="freya-adena" aria-labelledby="freya-adena-label"></output></div>
+        <p>За попытку: 300 000 адены за синтез и 2 070 000 за святую воду. При неудаче предмет уничтожается.</p>
+      </section>
     </div>
   </div>
 </main>
@@ -359,6 +365,7 @@ setupSphereCalculator(
   document.querySelector('#chaos-base-price'),
   document.querySelector('#chaos-full-cost'),
 );
+setupSphereCalculator('freya', [90, 90, 90, 60, 60, 30, 30, 20, 10, 10]);
 </script>
 </body>
 </html>
