@@ -44,7 +44,7 @@
     <button type="button" id="coin-calculator-toggle" aria-controls="calculator" aria-expanded="false">Калькулятор Монет</button>
     <button type="button" id="craft-toggle" aria-controls="craft" aria-expanded="false">Калькулятор Рандом Крафта</button>
     <button type="button" id="sphere-toggle" aria-controls="sphere-calculators" aria-expanded="false">Синтез Сфер и Коллекций Рамоны и Фреи, Драгоценные камни</button>
-    <button type="button" disabled>Калькулятор 4</button>
+    <button type="button" id="xp-calculator-button">Калькулятор Экспы</button>
     <button type="button" disabled>Калькулятор 5</button>
     <button type="button" disabled>Калькулятор 6</button>
   </div>
@@ -479,6 +479,12 @@ function updateSparklingGem() {
 
 sparklingLevel.addEventListener('change', updateSparklingGem);
 updateSparklingGem();
+const xpSound = new Audio('https://www.myinstants.com/media/sounds/idi-ty-ty-i-ty.mp3');
+xpSound.preload = 'none';
+document.querySelector('#xp-calculator-button').addEventListener('click', () => {
+  xpSound.currentTime = 0;
+  xpSound.play().catch(error => console.warn('Не удалось воспроизвести звук калькулятора экспы', error));
+});
 </script>
 </body>
 </html>
